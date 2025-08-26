@@ -1,42 +1,117 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+:root {
+  --primary: #3a6df0;
+  --secondary: #5c5c71;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --light: #f8f9fa;
+  --dark: #212529;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f6f8;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  z-index: 1000;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  padding: 0 20px 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.nav-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.nav-item:hover, .nav-item.active {
+  background-color: #f0f5ff;
+  color: var(--primary);
+  border-left: 4px solid var(--primary);
 }
 
 .card {
-  padding: 2em;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
-.read-the-docs {
-  color: #888;
+.stat-card {
+  text-align: center;
+  padding: 20px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.kit-card, .student-card {
+  transition: transform 0.2s;
+}
+
+.kit-card:hover, .student-card:hover {
+  transform: translateY(-5px);
+}
+
+.condition-good {
+  color: var(--success);
+}
+
+.condition-fair {
+  color: var(--warning);
+}
+
+.condition-poor {
+  color: var(--danger);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #2954d0;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
 }
