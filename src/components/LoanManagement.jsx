@@ -1,77 +1,13 @@
 import { useState } from 'react';
+import CreateLoanModal from './Modals/CreateLoanModal';
 
-const LoanManagement = ({ kits, students }) => {
-  const [loans, setLoans] = useState([
-    { 
-      id: 1, 
-      kitId: 2, 
-      studentId: 1, 
-      borrowed: "2023-05-10 10:30:00", 
-      returned: null, 
-      due: "2023-05-17 10:30:00",
-      conditionBorrowed: "Good",
-      conditionReturned: null,
-      componentsIncluded: [101, 102, 103, 104],
-      componentsReturned: []
-    },
-    { 
-      id: 2, 
-      kitId: 1, 
-      studentId: 2, 
-      borrowed: "2023-06-01 14:15:00", 
-      returned: "2023-06-08 11:20:00", 
-      due: "2023-06-08 14:15:00",
-      conditionBorrowed: "Excellent",
-      conditionReturned: "Excellent",
-      componentsIncluded: [1, 2, 3, 4, 5],
-      componentsReturned: [1, 2, 3, 4, 5]
-    }
-  ]);
-  
+const LoanManagement = ({ kits, students, loans, setLoans, onReturnKit, onCreateLoan }) => {
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [returnModal, setReturnModal] = useState(null);
-  const [newLoan, setNewLoan] = useState({
-    kitId: '',
-    studentId: '',
-    due: '',
-    conditionBorrowed: 'Excellent'
-  });
   const [returnData, setReturnData] = useState({
     conditionReturned: 'Excellent',
     componentsReturned: []
   });
-
-  const handleCreateLoan = (e) => {
-    e.preventDefault();
-    const kit = kits.find(k => k.id === parseInt(newLoan.kitId));
-    
-    const loan = {
-      id: loans.length + 1,
-      kitId: parseInt(newLoan.kitId),
-      studentId: parseInt(newLoan.studentId),
-      borrowed: new Date().toLocaleString('sv').replace('T', ' ').substring(0, 19),
-      returned: null,
-      due: newLoan.due,
-      conditionBorrowed: newLoan.conditionBorrowed,
-      conditionReturned: null,
-      componentsIncluded: kit ? kit.components.map(c => c.id) : [],
-      componentsReturned: []
-    };
-    
-    // Update kit status
-    const updatedKits = kits.map(kit => 
-      kit.id === parseInt(newLoan.kitId) ? {...kit, status: 'Loaned'} : kit
-    );
-    
-    setLoans([...loans, loan]);
-    setNewLoan({
-      kitId: '',
-      studentId: '',
-      due: '',
-      conditionBorrowed: 'Excellent'
-    });
-    setShowLoanForm(false);
-  };
 
   const handleReturnKit = (loanId) => {
     setReturnModal(loanId);
@@ -85,31 +21,7 @@ const LoanManagement = ({ kits, students }) => {
   };
 
   const confirmReturn = () => {
-    const updatedLoans = loans.map(loan => 
-      loan.id === returnModal 
-        ? {
-            ...loan, 
-            returned: new Date().toLocaleString('sv').replace('T', ' ').substring(0, 19),
-            conditionReturned: returnData.conditionReturned,
-            componentsReturned: returnData.componentsReturned
-          } 
-        : loan
-    );
-    
-    const loan = loans.find(l => l.id === returnModal);
-    
-    // Update kit status and condition if changed
-    const updatedKits = kits.map(kit => 
-      kit.id === loan.kitId 
-        ? {
-            ...kit, 
-            status: 'Available',
-            condition: returnData.conditionReturned
-          } 
-        : kit
-    );
-    
-    setLoans(updatedLoans);
+    onReturnKit(returnModal, returnData);
     setReturnModal(null);
     setReturnData({
       conditionReturned: 'Excellent',
@@ -316,104 +228,13 @@ const LoanManagement = ({ kits, students }) => {
         </div>
       </div>
       
-      {/* Create Loan Modal */}
-      {showLoanForm && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Create New Loan</h5>
-                <button type="button" className="btn-close" onClick={() => {
-                  setShowLoanForm(false);
-                  setNewLoan({
-                    kitId: '',
-                    studentId: '',
-                    due: '',
-                    conditionBorrowed: 'Excellent'
-                  });
-                }}></button>
-              </div>
-              <form onSubmit={handleCreateLoan}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Select Kit *</label>
-                    <select 
-                      className="form-select"
-                      value={newLoan.kitId}
-                      onChange={(e) => setNewLoan({...newLoan, kitId: e.target.value})}
-                      required
-                    >
-                      <option value="">Choose a kit</option>
-                      {kits.filter(kit => kit.status === 'Available').map(kit => (
-                        <option key={kit.id} value={kit.id}>{kit.name} ({kit.condition})</option>
-                      ))}
-                    </select>
-                    <div className="form-text">
-                      Only available kits are shown
-                    </div>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Select Student *</label>
-                    <select 
-                      className="form-select"
-                      value={newLoan.studentId}
-                      onChange={(e) => setNewLoan({...newLoan, studentId: e.target.value})}
-                      required
-                    >
-                      <option value="">Choose a student</option>
-                      {students.map(student => (
-                        <option key={student.id} value={student.id}>
-                          {student.name} ({student.studentId}) - {student.program}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Due Date & Time *</label>
-                    <input 
-                      type="datetime-local" 
-                      className="form-control" 
-                      value={newLoan.due}
-                      onChange={(e) => setNewLoan({...newLoan, due: e.target.value})}
-                      required 
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Condition at Borrowing</label>
-                    <select 
-                      className="form-select"
-                      value={newLoan.conditionBorrowed}
-                      onChange={(e) => setNewLoan({...newLoan, conditionBorrowed: e.target.value})}
-                    >
-                      <option value="Excellent">Excellent</option>
-                      <option value="Good">Good</option>
-                      <option value="Fair">Fair</option>
-                      <option value="Poor">Poor</option>
-                    </select>
-                    <div className="form-text">
-                      Record the condition of the kit when borrowed
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => {
-                    setShowLoanForm(false);
-                    setNewLoan({
-                      kitId: '',
-                      studentId: '',
-                      due: '',
-                      conditionBorrowed: 'Excellent'
-                    });
-                  }}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">Create Loan</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateLoanModal
+        show={showLoanForm}
+        onClose={() => setShowLoanForm(false)}
+        onCreate={onCreateLoan}
+        kits={kits}
+        students={students}
+      />
       
       {/* Return Kit Modal */}
       {returnModal && (

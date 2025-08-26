@@ -126,7 +126,7 @@ function App() {
     const kit = kits.find(k => k.id === parseInt(newLoan.kitId));
     
     const loan = {
-      id: loans.length + 1,
+      id: Math.max(...loans.map(l => l.id), 0) + 1,
       kitId: parseInt(newLoan.kitId),
       studentId: parseInt(newLoan.studentId),
       borrowed: new Date().toLocaleString('sv').replace('T', ' ').substring(0, 19),
@@ -332,4 +332,4 @@ function App() {
   )
 }
 
-export default App;
+export default App
