@@ -7,7 +7,7 @@ CREATE TABLE kits (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    condition ENUM('Excellent', 'Good', 'Fair', 'Poor') DEFAULT 'Good',
+    `condition` ENUM('Excellent', 'Good', 'Fair', 'Poor') DEFAULT 'Good',
     status ENUM('Available', 'Loaned', 'Under Maintenance') DEFAULT 'Available',
     image_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -7,7 +7,8 @@ try {
     // Get all loans with kit, student, and component information
     $stmt = $pdo->query("
         SELECT 
-            l.*,
+            l.id, l.kit_id, l.student_id, l.borrowed_at, l.returned_at, l.due_at, 
+            l.condition_borrowed, l.condition_returned,
             k.name as kit_name,
             k.image_url as kit_image,
             s.name as student_name,

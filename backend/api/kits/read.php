@@ -6,7 +6,7 @@ try {
 
     // Get all kits with their components
     $stmt = $pdo->query("
-        SELECT k.*, 
+        SELECT k.id, k.name, k.description, k.`condition`, k.status, k.image_url, k.created_at, k.updated_at,
                GROUP_CONCAT(CONCAT(c.id, ':', c.name, ':', kc.quantity) SEPARATOR ';') as component_list
         FROM kits k
         LEFT JOIN kit_components kc ON k.id = kc.kit_id

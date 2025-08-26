@@ -21,7 +21,7 @@ try {
     // Update kit
     $stmt = $pdo->prepare("
         UPDATE kits 
-        SET name = ?, description = ?, condition = ?, status = ?, image_url = ?
+        SET name = ?, description = ?, `condition` = ?, status = ?, image_url = ?
         WHERE id = ?
     ");
 

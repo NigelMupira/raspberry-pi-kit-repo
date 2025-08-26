@@ -19,7 +19,7 @@ try {
 
     // Insert kit
     $stmt = $pdo->prepare("
-        INSERT INTO kits (name, description, condition, status, image_url) 
+        INSERT INTO kits (name, description, 'condition', status, image_url) 
         VALUES (?, ?, ?, ?, ?)
     ");
 
