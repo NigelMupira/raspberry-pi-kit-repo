@@ -1,0 +1,504 @@
+import { useState } from 'react';
+
+const LoanManagement = ({ kits, students }) => {
+  const [loans, setLoans] = useState([
+    { 
+      id: 1, 
+      kitId: 2, 
+      studentId: 1, 
+      borrowed: "2023-05-10 10:30:00", 
+      returned: null, 
+      due: "2023-05-17 10:30:00",
+      conditionBorrowed: "Good",
+      conditionReturned: null,
+      componentsIncluded: [101, 102, 103, 104],
+      componentsReturned: []
+    },
+    { 
+      id: 2, 
+      kitId: 1, 
+      studentId: 2, 
+      borrowed: "2023-06-01 14:15:00", 
+      returned: "2023-06-08 11:20:00", 
+      due: "2023-06-08 14:15:00",
+      conditionBorrowed: "Excellent",
+      conditionReturned: "Excellent",
+      componentsIncluded: [1, 2, 3, 4, 5],
+      componentsReturned: [1, 2, 3, 4, 5]
+    }
+  ]);
+  
+  const [showLoanForm, setShowLoanForm] = useState(false);
+  const [returnModal, setReturnModal] = useState(null);
+  const [newLoan, setNewLoan] = useState({
+    kitId: '',
+    studentId: '',
+    due: '',
+    conditionBorrowed: 'Excellent'
+  });
+  const [returnData, setReturnData] = useState({
+    conditionReturned: 'Excellent',
+    componentsReturned: []
+  });
+
+  const handleCreateLoan = (e) => {
+    e.preventDefault();
+    const kit = kits.find(k => k.id === parseInt(newLoan.kitId));
+    
+    const loan = {
+      id: loans.length + 1,
+      kitId: parseInt(newLoan.kitId),
+      studentId: parseInt(newLoan.studentId),
+      borrowed: new Date().toLocaleString('sv').replace('T', ' ').substring(0, 19),
+      returned: null,
+      due: newLoan.due,
+      conditionBorrowed: newLoan.conditionBorrowed,
+      conditionReturned: null,
+      componentsIncluded: kit ? kit.components.map(c => c.id) : [],
+      componentsReturned: []
+    };
+    
+    // Update kit status
+    const updatedKits = kits.map(kit => 
+      kit.id === parseInt(newLoan.kitId) ? {...kit, status: 'Loaned'} : kit
+    );
+    
+    setLoans([...loans, loan]);
+    setNewLoan({
+      kitId: '',
+      studentId: '',
+      due: '',
+      conditionBorrowed: 'Excellent'
+    });
+    setShowLoanForm(false);
+  };
+
+  const handleReturnKit = (loanId) => {
+    setReturnModal(loanId);
+    const loan = loans.find(l => l.id === loanId);
+    const kit = kits.find(k => k.id === loan.kitId);
+    
+    setReturnData({
+      conditionReturned: loan.conditionBorrowed,
+      componentsReturned: kit ? kit.components.map(c => c.id) : []
+    });
+  };
+
+  const confirmReturn = () => {
+    const updatedLoans = loans.map(loan => 
+      loan.id === returnModal 
+        ? {
+            ...loan, 
+            returned: new Date().toLocaleString('sv').replace('T', ' ').substring(0, 19),
+            conditionReturned: returnData.conditionReturned,
+            componentsReturned: returnData.componentsReturned
+          } 
+        : loan
+    );
+    
+    const loan = loans.find(l => l.id === returnModal);
+    
+    // Update kit status and condition if changed
+    const updatedKits = kits.map(kit => 
+      kit.id === loan.kitId 
+        ? {
+            ...kit, 
+            status: 'Available',
+            condition: returnData.conditionReturned
+          } 
+        : kit
+    );
+    
+    setLoans(updatedLoans);
+    setReturnModal(null);
+    setReturnData({
+      conditionReturned: 'Excellent',
+      componentsReturned: []
+    });
+  };
+
+  const toggleComponentReturn = (componentId) => {
+    if (returnData.componentsReturned.includes(componentId)) {
+      setReturnData({
+        ...returnData,
+        componentsReturned: returnData.componentsReturned.filter(id => id !== componentId)
+      });
+    } else {
+      setReturnData({
+        ...returnData,
+        componentsReturned: [...returnData.componentsReturned, componentId]
+      });
+    }
+  };
+
+  const formatDateTime = (dateTimeStr) => {
+    if (!dateTimeStr) return '-';
+    const date = new Date(dateTimeStr.replace(' ', 'T'));
+    return date.toLocaleString();
+  };
+
+  const getStatusBadge = (loan) => {
+    if (loan.returned) {
+      return <span className="badge bg-success">Returned</span>;
+    } else {
+      const dueDate = new Date(loan.due.replace(' ', 'T'));
+      const now = new Date();
+      if (dueDate < now) {
+        return <span className="badge bg-danger">Overdue</span>;
+      } else {
+        return <span className="badge bg-warning">Active</span>;
+      }
+    }
+  };
+
+  const activeLoans = loans.filter(loan => !loan.returned);
+  const completedLoans = loans.filter(loan => loan.returned);
+
+  return (
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Loan Management</h2>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => setShowLoanForm(true)}
+          disabled={kits.filter(kit => kit.status === 'Available').length === 0}
+        >
+          Create New Loan
+        </button>
+      </div>
+
+      <ul className="nav nav-tabs mb-4" id="loanTabs" role="tablist">
+        <li className="nav-item" role="presentation">
+          <button 
+            className="nav-link active" 
+            id="active-tab" 
+            data-bs-toggle="tab" 
+            data-bs-target="#active" 
+            type="button" 
+            role="tab"
+          >
+            Active Loans <span className="badge bg-warning ms-1">{activeLoans.length}</span>
+          </button>
+        </li>
+        <li className="nav-item" role="presentation">
+          <button 
+            className="nav-link" 
+            id="completed-tab" 
+            data-bs-toggle="tab" 
+            data-bs-target="#completed" 
+            type="button" 
+            role="tab"
+          >
+            Loan History <span className="badge bg-secondary ms-1">{completedLoans.length}</span>
+          </button>
+        </li>
+      </ul>
+
+      <div className="tab-content" id="loanTabsContent">
+        {/* Active Loans Tab */}
+        <div className="tab-pane fade show active" id="active" role="tabpanel">
+          {activeLoans.length > 0 ? (
+            <div className="table-responsive">
+              <table className="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Loan ID</th>
+                    <th>Kit</th>
+                    <th>Student</th>
+                    <th>Borrowed Date</th>
+                    <th>Due Date</th>
+                    <th>Condition</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeLoans.map(loan => {
+                    const kit = kits.find(k => k.id === loan.kitId);
+                    const student = students.find(s => s.id === loan.studentId);
+                    return (
+                      <tr key={loan.id}>
+                        <td><strong>#{loan.id}</strong></td>
+                        <td>{kit ? kit.name : 'Unknown Kit'}</td>
+                        <td>
+                          {student ? student.name : 'Unknown Student'}
+                          <div className="text-muted small">{student ? student.studentId : ''}</div>
+                        </td>
+                        <td>{formatDateTime(loan.borrowed)}</td>
+                        <td>{formatDateTime(loan.due)}</td>
+                        <td>
+                          <span className={`condition-${loan.conditionBorrowed.toLowerCase()}`}>
+                            {loan.conditionBorrowed}
+                          </span>
+                        </td>
+                        <td>{getStatusBadge(loan)}</td>
+                        <td>
+                          <button 
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleReturnKit(loan.id)}
+                          >
+                            Return Kit
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="alert alert-info">
+              No active loans. <strong>Create a new loan</strong> to get started.
+            </div>
+          )}
+        </div>
+
+        {/* Completed Loans Tab */}
+        <div className="tab-pane fade" id="completed" role="tabpanel">
+          {completedLoans.length > 0 ? (
+            <div className="table-responsive">
+              <table className="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Loan ID</th>
+                    <th>Kit</th>
+                    <th>Student</th>
+                    <th>Borrowed Date</th>
+                    <th>Returned Date</th>
+                    <th>Condition</th>
+                    <th>Components</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completedLoans.map(loan => {
+                    const kit = kits.find(k => k.id === loan.kitId);
+                    const student = students.find(s => s.id === loan.studentId);
+                    const allComponentsReturned = loan.componentsIncluded.length === loan.componentsReturned.length;
+                    
+                    return (
+                      <tr key={loan.id}>
+                        <td><strong>#{loan.id}</strong></td>
+                        <td>{kit ? kit.name : 'Unknown Kit'}</td>
+                        <td>
+                          {student ? student.name : 'Unknown Student'}
+                          <div className="text-muted small">{student ? student.studentId : ''}</div>
+                        </td>
+                        <td>{formatDateTime(loan.borrowed)}</td>
+                        <td>{formatDateTime(loan.returned)}</td>
+                        <td>
+                          <div>Borrowed: 
+                            <span className={`condition-${loan.conditionBorrowed.toLowerCase()}`}>
+                              {loan.conditionBorrowed}
+                            </span>
+                          </div>
+                          <div>Returned: 
+                            <span className={`condition-${loan.conditionReturned.toLowerCase()}`}>
+                              {loan.conditionReturned}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={allComponentsReturned ? "text-success" : "text-danger"}>
+                            {loan.componentsReturned.length}/{loan.componentsIncluded.length} components returned
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="alert alert-info">
+              No loan history yet.
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Create Loan Modal */}
+      {showLoanForm && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Create New Loan</h5>
+                <button type="button" className="btn-close" onClick={() => {
+                  setShowLoanForm(false);
+                  setNewLoan({
+                    kitId: '',
+                    studentId: '',
+                    due: '',
+                    conditionBorrowed: 'Excellent'
+                  });
+                }}></button>
+              </div>
+              <form onSubmit={handleCreateLoan}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Select Kit *</label>
+                    <select 
+                      className="form-select"
+                      value={newLoan.kitId}
+                      onChange={(e) => setNewLoan({...newLoan, kitId: e.target.value})}
+                      required
+                    >
+                      <option value="">Choose a kit</option>
+                      {kits.filter(kit => kit.status === 'Available').map(kit => (
+                        <option key={kit.id} value={kit.id}>{kit.name} ({kit.condition})</option>
+                      ))}
+                    </select>
+                    <div className="form-text">
+                      Only available kits are shown
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Select Student *</label>
+                    <select 
+                      className="form-select"
+                      value={newLoan.studentId}
+                      onChange={(e) => setNewLoan({...newLoan, studentId: e.target.value})}
+                      required
+                    >
+                      <option value="">Choose a student</option>
+                      {students.map(student => (
+                        <option key={student.id} value={student.id}>
+                          {student.name} ({student.studentId}) - {student.program}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Due Date & Time *</label>
+                    <input 
+                      type="datetime-local" 
+                      className="form-control" 
+                      value={newLoan.due}
+                      onChange={(e) => setNewLoan({...newLoan, due: e.target.value})}
+                      required 
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Condition at Borrowing</label>
+                    <select 
+                      className="form-select"
+                      value={newLoan.conditionBorrowed}
+                      onChange={(e) => setNewLoan({...newLoan, conditionBorrowed: e.target.value})}
+                    >
+                      <option value="Excellent">Excellent</option>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Poor">Poor</option>
+                    </select>
+                    <div className="form-text">
+                      Record the condition of the kit when borrowed
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => {
+                    setShowLoanForm(false);
+                    setNewLoan({
+                      kitId: '',
+                      studentId: '',
+                      due: '',
+                      conditionBorrowed: 'Excellent'
+                    });
+                  }}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">Create Loan</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Return Kit Modal */}
+      {returnModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Return Kit</h5>
+                <button type="button" className="btn-close" onClick={() => setReturnModal(null)}></button>
+              </div>
+              <div className="modal-body">
+                {(() => {
+                  const loan = loans.find(l => l.id === returnModal);
+                  const kit = kits.find(k => k.id === loan.kitId);
+                  const student = students.find(s => s.id === loan.studentId);
+                  
+                  return (
+                    <>
+                      <div className="row mb-4">
+                        <div className="col-md-6">
+                          <h6>Kit Information</h6>
+                          <p><strong>{kit ? kit.name : 'Unknown Kit'}</strong></p>
+                          <p>Borrowed: {formatDateTime(loan.borrowed)}</p>
+                          <p>Due: {formatDateTime(loan.due)}</p>
+                        </div>
+                        <div className="col-md-6">
+                          <h6>Student Information</h6>
+                          <p><strong>{student ? student.name : 'Unknown Student'}</strong></p>
+                          <p>{student ? student.studentId : ''}</p>
+                          <p>{student ? student.program : ''}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label">Condition at Return *</label>
+                        <select 
+                          className="form-select"
+                          value={returnData.conditionReturned}
+                          onChange={(e) => setReturnData({...returnData, conditionReturned: e.target.value})}
+                          required
+                        >
+                          <option value="Excellent">Excellent</option>
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                          <option value="Poor">Poor</option>
+                        </select>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label">Components Returned</label>
+                        <p className="text-muted small">Check all components that are being returned:</p>
+                        
+                        {kit && kit.components.map(component => (
+                          <div key={component.id} className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              checked={returnData.componentsReturned.includes(component.id)}
+                              onChange={() => toggleComponentReturn(component.id)}
+                              id={`component-${component.id}`}
+                            />
+                            <label className="form-check-label" htmlFor={`component-${component.id}`}>
+                              {component.name} (Qty: {component.quantity})
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setReturnModal(null)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn-primary" onClick={confirmReturn}>
+                  Confirm Return
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LoanManagement;
