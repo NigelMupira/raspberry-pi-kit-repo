@@ -1,47 +1,72 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AddKitModal from './Modals/AddKitModal';
+import { kitAPI } from '../services';
 
-const KitManagement = ({ kits, setKits }) => {
+const KitManagement = () => {
+  const [kits, setKits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAddKit, setShowAddKit] = useState(false);
   const [editingKit, setEditingKit] = useState(null);
+
+  // Load kits from API
+  useEffect(() => {
+    loadKits();
+  }, []);
+
+  const loadKits = async () => {
+    try {
+      setLoading(true);
+      const data = await kitAPI.getAll();
+      setKits(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load kits. Please try again later.');
+      console.error('Error loading kits:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEditKit = (kit) => {
     setEditingKit(kit);
     setShowAddKit(true);
   };
 
-  const handleDeleteKit = (kitId) => {
-    if (window.confirm("Are you sure you want to delete this kit?")) {
-      setKits(kits.filter(kit => kit.id !== kitId));
+  const handleSaveKit = async (kitData) => {
+    try {
+      if (editingKit) {
+        // Update existing kit
+        await kitAPI.update(editingKit.id, kitData);
+      } else {
+        // Add new kit
+        await kitAPI.create(kitData);
+      }
+      // Reload kits from server
+      await loadKits();
+      setEditingKit(null);
+      setShowAddKit(false);
+    } catch (err) {
+      setError('Failed to save kit. Please try again.');
+      console.error('Error saving kit:', err);
     }
   };
 
-  const handleSaveKit = (kitData) => {
-    if (editingKit) {
-      // Update existing kit
-      const updatedKits = kits.map(kit => 
-        kit.id === editingKit.id 
-          ? { 
-              ...kit, 
-              ...kitData,
-              id: editingKit.id,
-              image: kitData.image || "https://placehold.co/300x200/3a6df0/white?text=Pi+Kit"
-            } 
-          : kit
-      );
-      setKits(updatedKits);
-    } else {
-      // Add new kit
-      const newKit = {
-        id: Math.max(...kits.map(k => k.id), 0) + 1,
-        ...kitData,
-        image: kitData.image || "https://placehold.co/300x200/3a6df0/white?text=Pi+Kit"
-      };
-      setKits([...kits, newKit]);
+  const handleDeleteKit = async (kitId) => {
+    if (window.confirm("Are you sure you want to delete this kit?")) {
+      try {
+        await kitAPI.delete(kitId);
+        // Reload kits from server
+        await loadKits();
+      } catch (err) {
+        setError('Failed to delete kit. Please try again.');
+        console.error('Error deleting kit:', err);
+      }
     }
-    setEditingKit(null);
-    setShowAddKit(false);
   };
+
+  if (loading) return <div className="text-center py-5">Loading kits...</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
     <div>

@@ -1,13 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CreateLoanModal from './Modals/CreateLoanModal';
+import { loanAPI, kitAPI, studentAPI } from '../services';
 
-const LoanManagement = ({ kits, students, loans, setLoans, onReturnKit, onCreateLoan }) => {
+const LoanManagement = () => {
+  const [loans, setLoans] = useState([]);
+  const [kits, setKits] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [returnModal, setReturnModal] = useState(null);
   const [returnData, setReturnData] = useState({
     conditionReturned: 'Excellent',
     componentsReturned: []
   });
+
+  // Load data from API
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+      const [loansData, kitsData, studentsData] = await Promise.all([
+        loanAPI.getAll(),
+        kitAPI.getAll(),
+        studentAPI.getAll()
+      ]);
+      
+      setLoans(loansData);
+      setKits(kitsData);
+      setStudents(studentsData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load data. Please try again later.');
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateLoan = async (loanData) => {
+    try {
+      await loanAPI.create(loanData);
+      // Reload data to get updated kit statuses
+      await loadAllData();
+      setShowLoanForm(false);
+    } catch (err) {
+      setError('Failed to create loan. Please try again.');
+      console.error('Error creating loan:', err);
+    }
+  };
 
   const handleReturnKit = (loanId) => {
     setReturnModal(loanId);
@@ -20,13 +64,20 @@ const LoanManagement = ({ kits, students, loans, setLoans, onReturnKit, onCreate
     });
   };
 
-  const confirmReturn = () => {
-    onReturnKit(returnModal, returnData);
-    setReturnModal(null);
-    setReturnData({
-      conditionReturned: 'Excellent',
-      componentsReturned: []
-    });
+  const confirmReturn = async () => {
+    try {
+      await loanAPI.return(returnModal, returnData);
+      // Reload data to get updated information
+      await loadAllData();
+      setReturnModal(null);
+      setReturnData({
+        conditionReturned: 'Excellent',
+        componentsReturned: []
+      });
+    } catch (err) {
+      setError('Failed to return kit. Please try again.');
+      console.error('Error returning kit:', err);
+    }
   };
 
   const toggleComponentReturn = (componentId) => {
@@ -65,6 +116,9 @@ const LoanManagement = ({ kits, students, loans, setLoans, onReturnKit, onCreate
 
   const activeLoans = loans.filter(loan => !loan.returned);
   const completedLoans = loans.filter(loan => loan.returned);
+
+  if (loading) return <div className="text-center py-5">Loading data...</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
     <div>
@@ -231,7 +285,7 @@ const LoanManagement = ({ kits, students, loans, setLoans, onReturnKit, onCreate
       <CreateLoanModal
         show={showLoanForm}
         onClose={() => setShowLoanForm(false)}
-        onCreate={onCreateLoan}
+        onCreate={handleCreateLoan}
         kits={kits}
         students={students}
       />

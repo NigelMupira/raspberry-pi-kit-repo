@@ -9,14 +9,12 @@ export const kitAPI = USE_MOCK_DATA ? mockAPI.kits : api.kits;
 export const studentAPI = USE_MOCK_DATA ? mockAPI.students : api.students;
 export const loanAPI = USE_MOCK_DATA ? mockAPI.loans : api.loans;
 
-// Helper to switch between mock and real API
-export const setUseMockData = (useMock) => {
-  window.location.reload(); // Reload to apply changes
-};
+// Helper to check if we're using mock data
+export const isUsingMockData = () => USE_MOCK_DATA;
 
 export default {
   kits: kitAPI,
   students: studentAPI,
   loans: loanAPI,
-  setUseMockData
+  isUsingMockData
 };
