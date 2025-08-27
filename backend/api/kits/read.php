@@ -1,10 +1,30 @@
 <?php
 require_once '../config.php';
 
+// Simple test response - remove this after testing
+echo json_encode([
+    "success" => true,
+    "message" => "Kits endpoint is working!",
+    "data" => [
+        [
+            "id" => 1,
+            "name" => "Test Kit",
+            "condition" => "Excellent",
+            "status" => "Available"
+        ]
+    ],
+    "debug" => [
+        "request_method" => $_SERVER['REQUEST_METHOD'],
+        "timestamp" => date('Y-m-d H:i:s')
+    ]
+]);
+exit();
+
+// Keep your original code below for when testing is done
 try {
     $pdo = getDBConnection();
 
-    // Get all kits with their components
+    // Get all kits with their components - UPDATED with explicit column names
     $stmt = $pdo->query("
         SELECT k.id, k.name, k.description, k.`condition`, k.status, k.image_url, k.created_at, k.updated_at,
                GROUP_CONCAT(CONCAT(c.id, ':', c.name, ':', kc.quantity) SEPARATOR ';') as component_list
